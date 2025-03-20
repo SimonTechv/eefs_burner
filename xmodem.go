@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"go.bug.st/serial"
 )
@@ -21,8 +23,9 @@ const (
 type xModem struct {
 	payloadSize uint16
 
-	/* Settings of selected COM port */
+	portHandle   serial.Port
 	portSettings serial.Mode
+	portName     string
 }
 
 /**
@@ -45,11 +48,21 @@ type xModem struct {
 /**
  * Initialize transfer object
  */
-func xModemInit(payload_size uint16, pors_settings serial.Mode) *xModem {
+func xModemInit(port_name string, payload_size uint16, port_settings serial.Mode) *xModem {
 
 	xm := xModem{
 		payloadSize:  payload_size,
-		portSettings: pors_settings,
+		portSettings: port_settings,
+		portName:     port_name,
+	}
+
+	fmt.Println(xm)
+
+	/* Prepare port to transfer */
+	err := error(nil)
+	xm.portHandle, err = serial.Open(xm.portName, &xm.portSettings)
+	if err != nil {
+		log.Fatal("Error in opening port!", err)
 	}
 
 	return &xm
@@ -58,9 +71,13 @@ func xModemInit(payload_size uint16, pors_settings serial.Mode) *xModem {
 /**
  * Perform file transfer
  */
-func (xm *xModem) FileTransfer(file []byte, size uint32) {
+func (xm *xModem) FileTransfer(file *os.File, size int64) {
 
 	log.Println("Perform file transfer")
+
+	slice := []byte{1, 2, 3, 4, 5, 6, 7}
+
+	xm.portHandle.Write(slice)
 
 	/* Flush buffers */
 

@@ -1,30 +1,40 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"os"
 
 	"go.bug.st/serial"
 )
 
 func main() {
 
-	ports, err := GetDevices()
-
+	ports, err := serial.GetPortsList()
 	if err != nil {
-		log.Fatal("No found devices")
-	} else {
-		fmt.Printf("Found %d serial devices:\n", len(ports))
-
-		for n, port := range ports {
-			fmt.Printf("\t%d: %s\n", n, port)
-		}
+		log.Fatal(err)
+	}
+	for _, port := range ports {
+		log.Printf("Found port: %v\n", port)
 	}
 
-	xm := xModemInit(256, serial.Mode{
-		BaudRate: 9600,
+	xm := xModemInit("COM11", 256, serial.Mode{
+		BaudRate: 115200,
 		Parity:   serial.NoParity,
 	})
 
-	log.Println(xm)
+	/* Open file & prepare to transfer */
+	fd, err := os.Open("test.img") // For read access.
+	if err != nil {
+		log.Fatal("Error in file open")
+	}
+	defer fd.Close()
+
+	var fs os.FileInfo
+
+	fs, err = fd.Stat()
+	if err != nil {
+		log.Fatal("Error in retrieve file info")
+	}
+	xm.FileTransfer(fd, fs.Size())
+
 }
